@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { changePassword } from '../data/authApi';
+import { changePassword, deleteAccount } from '../data/authApi';
 import { isSupabaseEnabled } from '../lib/supabase';
 
 export default function AccountPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +40,20 @@ export default function AccountPage() {
       setError(err.message || 'パスワードの変更に失敗しました');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteConfirm !== '削除する') return;
+    setDeleteLoading(true);
+    setError('');
+    try {
+      await deleteAccount(user.id);
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      setError(err.message || '削除に失敗しました');
+      setDeleteLoading(false);
     }
   };
 
@@ -92,6 +109,33 @@ export default function AccountPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="card form-card account-delete">
+        <h3>アカウント削除</h3>
+        <p className="delete-warning">
+          アカウントとすべてのデータ（顧客・予約・入金・記録）が削除されます。この操作は取り消せません。
+        </p>
+        <label>
+          削除する場合は「削除する」と入力
+          <input
+            type="text"
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            placeholder="削除する"
+            disabled={deleteLoading}
+          />
+        </label>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="btn btn-danger"
+            disabled={deleteConfirm !== '削除する' || deleteLoading}
+            onClick={handleDelete}
+          >
+            {deleteLoading ? '削除中...' : 'アカウントを削除'}
+          </button>
+        </div>
       </div>
     </div>
   );

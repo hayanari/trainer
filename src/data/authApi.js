@@ -54,3 +54,43 @@ export const logoutUser = async () => {
     logoutLocal();
   }
 };
+
+export const deleteAccount = async (userId) => {
+  if (isSupabaseEnabled()) {
+    const { data: customers } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('user_id', userId);
+    if (customers?.length) {
+      for (const c of customers) {
+        await supabase.from('customers').delete().eq('id', c.id);
+      }
+    }
+    await logoutFromSupabase(supabase);
+  } else {
+    const {
+      loadUsers,
+      saveUsers,
+      setSession,
+    } = await import('./auth');
+    const {
+      loadCustomers,
+      saveCustomers,
+      loadAppointments,
+      saveAppointments,
+      loadPayments,
+      savePayments,
+      loadTrainingRecords,
+      saveTrainingRecords,
+    } = await import('./store');
+    const allCustomers = loadCustomers();
+    const myCustomers = allCustomers.filter((c) => c.userId === userId);
+    const customerIds = myCustomers.map((c) => c.id);
+    saveUsers(loadUsers().filter((u) => u.id !== userId));
+    saveCustomers(allCustomers.filter((c) => c.userId !== userId));
+    saveAppointments(loadAppointments().filter((a) => !customerIds.includes(a.customerId)));
+    savePayments(loadPayments().filter((p) => !customerIds.includes(p.customerId)));
+    saveTrainingRecords(loadTrainingRecords().filter((t) => !customerIds.includes(t.customerId)));
+    setSession(null);
+  }
+};
