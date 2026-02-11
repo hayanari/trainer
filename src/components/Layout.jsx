@@ -19,6 +19,13 @@ const CalendarIcon = () => (
   </svg>
 );
 
+const AccountIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 export default function Layout({ children }) {
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -26,6 +33,7 @@ export default function Layout({ children }) {
   const navItems = [
     { path: '/', label: '顧客', icon: PeopleIcon },
     { path: '/calendar', label: 'カレンダー', icon: CalendarIcon },
+    { path: '/account', label: 'アカウント', icon: AccountIcon },
   ];
 
   return (
@@ -47,7 +55,9 @@ export default function Layout({ children }) {
           const Icon = item.icon;
           const isActive = item.path === '/'
             ? location.pathname === '/' || location.pathname.startsWith('/customer/')
-            : location.pathname.startsWith(item.path);
+            : item.path === '/account'
+              ? location.pathname === '/account'
+              : location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.path}
